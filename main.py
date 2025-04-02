@@ -8,7 +8,7 @@ import psycopg2
 
 # Database connection parameters
 DB_HOST = "libdb-25co-postgres.cajikaswgj3d.us-east-1.rds.amazonaws.com"
-DB_NAME = ""
+DB_NAME = "postgres"
 DB_USER = "LibDB_25Co"
 DB_PASSWORD = "null"        # Replace this with the master password
 
