@@ -1,0 +1,4 @@
+pandas
+openpyxl
+psycopg2
+dotenv
