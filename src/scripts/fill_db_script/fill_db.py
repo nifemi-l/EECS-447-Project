@@ -78,6 +78,7 @@ def populate_table(table_name, table_data):
         insert_row(cursor, table_name, row)
         print(f"[INSERTED into {table_name}] {row}")
 
+    # Cleanup
     conn.commit()
     cursor.close()
     db.close()
