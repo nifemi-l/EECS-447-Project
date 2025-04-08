@@ -30,7 +30,16 @@ def connect_to_db():
 def ensure_configured(db_connection):
     """Configure the tables and realtions of the DB"""
     try:
-        config_queries = ""                      # define the queries to execute here. Separate with a semicolon.
+        config_queries = """
+        CREATE TABLE IF NOT EXISTS Clients (
+            ClientID SERIAL PRIMARY KEY CHECK (ClientID >= 0),
+            Name VARCHAR(100) NOT NULL,
+            MembershipType ENUM('Regular', 'Student', 'Senior Citizen', 'Other') NOT NULL,
+            AccountStatus ENUM('Active', 'Suspended', 'Inactive') NOT NULL,
+            EmailAddress VARCHAR(255) UNIQUE NOT NULL,
+            PhoneNumber VARCHAR(15) UNIQUE NOT NULL
+        );
+        """
         cursor = db_connection.cursor()
         cursor.execute(config_queries)
         db_connection.commit()
