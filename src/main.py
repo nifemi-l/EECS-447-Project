@@ -13,7 +13,7 @@ DB_USER = "LibDB_25Co"
 DB_PASSWORD = "null"        # Replace this with the master password
 
 def connect_to_db():
-    """Establish a connection to the PostgreSQL database."""
+    """Establish a connection to the PostgreSQL DB"""
     try:
         conn = psycopg2.connect(
             host=DB_HOST,
@@ -27,9 +27,26 @@ def connect_to_db():
         print(f"DB connection failure: {e}")
         return None
 
+def ensure_configured(db_connection):
+    """Configure the tables and realtions of the DB"""
+    try:
+        config_queries = ""                      # define the queries to execute here. Separate with a semicolon.
+        cursor = db_connection.cursor()
+        cursor.execute(config_queries)
+        db_connection.commit()
+        cursor.close()
+    except Exception as e:
+        print(f"exception encountered: {e}")
+
 
 def main():
     """CLI for interacting with DB"""
-    pass
+    connection  = connect_to_db()
+    ensure_configured(connection)
+
+    while True:
+        input_string = input("command: ")
+        for word in input_string.split(' '):
+            print(word)
 
 main()
