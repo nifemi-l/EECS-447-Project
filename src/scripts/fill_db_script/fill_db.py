@@ -5,7 +5,7 @@ from psycopg2 import sql
 from dotenv import load_dotenv
 from db_connection import PostgresDB
 
-def main():
+def main(test=False):
     """Execute the data parsing and population logic."""
     load_dotenv()
 
@@ -17,18 +17,24 @@ def main():
     
     tables_data = {}
 
-    # Parse data
+    # Parse data    
     for sheet in SHEET_NAMES: 
         workbook = read_sheet(PATH, sheet)  
-        tables_data[sheet] = parse_workbook(workbook)            
+        tables_data[sheet] = parse_workbook(sheet, workbook)            
 
     # Populate DB
-    for sheet in SHEET_NAMES: 
+    for sheet in SHEET_NAMES:     
         data = tables_data[sheet]
         if not data: 
             print(f"[SKIPPED] {sheet}: empty or failed to parse. No rows inserted.")
             continue
-        populate_table(sheet, data) 
+            
+        # Include test routing. Shows relation insertions
+        if test: 
+            target_table = "Book"
+            populate_table_test(sheet, data, target_table)
+        else:        
+            populate_table(sheet, data) 
 
 def read_sheet(file_path, excel_sheet_name=None): 
     """Read a specified sheet in a given excel file."""
@@ -38,7 +44,7 @@ def read_sheet(file_path, excel_sheet_name=None):
         print(f"Failed to read sheet '{excel_sheet_name}': '{e}'")
         return pd.DataFrame() # Return empty dataframe to safely skip
 
-def parse_workbook(workbook):
+def parse_workbook(table_name, workbook):
     """Parse a given workbook, store information."""
     sheet_store = []
 
@@ -48,20 +54,42 @@ def parse_workbook(workbook):
         if row.isnull().all():
             continue
 
+        # Skip rows with only occupied cell
+        for index, cell in enumerate(row):
+            if index == 0:
+                continue
+            if not pd.isnull(cell):
+                break
+        else:
+            continue # Skip row
+
         data = {}
 
         for col_name in workbook.columns:
             value = row[col_name]
 
-            # Appropriately floats to ints
+            # Modify data
             if isinstance(value, float) and value.is_integer():
                 value = int(value) 
             
+            if isinstance(value, pd.Timestamp):
+                value = value.date() # Remove time part
+            
+            # Store the field 
             data[col_name] = value
                 
         sheet_store.append(data)
         
     return sheet_store
+
+def populate_table_test(table_name, table_data, target_table, verbose=True): 
+    if not target_table.strip(): raise ValueError("Invalid table name.")
+    if print: 
+        if table_name != target_table: 
+            pass
+        else: 
+            for row in table_data: 
+                print(f"[INSERTED into {table_name}] {row}\n")        
 
 def populate_table(table_name, table_data): 
     """Populate a table in the PostgreSQL database."""
@@ -111,4 +139,4 @@ def open_db_conn():
         return None, None
 
 if __name__ == "__main__":
-    main()
+    main(True)
