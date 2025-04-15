@@ -1,5 +1,6 @@
 import os
 import openpyxl
+import sqlparse
 import pandas as pd
 from psycopg2 import sql 
 from dotenv import load_dotenv
@@ -68,20 +69,32 @@ def create_tables(ddl_path) -> bool:
         # Read the .sql file at the path
         with open(ddl_path, 'r') as ddl_file:
             # Store the statements in the file
-            ddl_statements = ddl_file.read()
+            ddl_content = ddl_file.read()
 
         # Create a cursor object
         cursor = conn.cursor()
 
-        # Execucute the ddl statements
-        cursor.execute(ddl_statements)
+        # Use sqlparse to split the the statements
+        # - Sqlparse parses the sql into tokens and understands the structure of the statements 
+        # - Better than a split by semicolon, for example
+        statements = sqlparse.split(ddl_content)
+
+        # Execute each statement
+        for statement in statements:
+            statement = statement.strip() 
+            if statement:
+                try:
+                    cursor.execute(statement)
+                    print("[SUCCESS] Executed statement")
+                except Exception as e:
+                    print(f"[ERROR] Failed to execute statement: {e}")
         
         conn.commit() # Commit changes
 
         success = True
         print("[SUCCESS] Database tables successfully created.")
     except Exception as e: 
-        print("[ERROR] Failed to execute DDL statements: {e}")
+        print(f"[ERROR] Failed to execute DDL statements: {e}")
 
     # Irrespective of the result, terminate connection and clean up
     finally: 
@@ -139,23 +152,20 @@ def parse_workbook(table_name, workbook):
     return sheet_store
 
 def populate_table_test(table_name, table_data, target_table, verbose=True): 
-    if not target_table.strip(): raise ValueError("Invalid table name.")
-    if print: 
-        if table_name != target_table: 
-            pass
-        else: 
-            for row in table_data: 
-                print(f"[INSERTED into {table_name}] {row}\n")        
+    if not target_table.strip(): raise ValueError("Invalid target table name.")
+    if table_name == target_table:
+        for row in table_data:
+            print(f"[INSERTED into {table_name}] {row}\n")
+      
 
 def populate_table(table_name, table_data): 
     """Populate a table in the PostgreSQL database."""
     conn, db = open_db_conn()
 
-    if not conn: 
-        print("[ERROR] Could not establish")
-    if not conn: 
+    if not conn:
         print(f"[SKIPPED] {table_name}: could not connect to DB.")
         return
+
     
     # A cursor is a control structure that allows the execution of SQL queries in the db
     cursor = conn.cursor()
