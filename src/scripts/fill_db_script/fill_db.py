@@ -5,9 +5,16 @@ from psycopg2 import sql
 from dotenv import load_dotenv
 from db_connection import PostgresDB
 
-def main(test=False):
+def main(test=False, build_tables=False):
     """Execute the data parsing and population logic."""
     load_dotenv()
+
+    # If informed to do so, create the tables to inhabit the database
+    if build_tables: 
+        # Relative path to the ddl file
+        ddl_path = "src/scripts/fill_db_script/libraryDDL.sql"
+        if not (create_tables(ddl_path)): 
+            raise Exception()
 
     PATH = os.getenv("EXCEL_PATH")
     SHEET_NAMES = ['Client', 'Transaction', 'MediaItem', 'Book', 'Magazine', 'DigitalMedia']
@@ -29,12 +36,61 @@ def main(test=False):
             print(f"[SKIPPED] {sheet}: empty or failed to parse. No rows inserted.")
             continue
             
-        # Include test routing. Shows relation insertions
+        # Include test routing. Shows data to be inserted to the db, in the correct order
         if test: 
             target_table = "Book"
             populate_table_test(sheet, data, target_table)
         else:        
             populate_table(sheet, data) 
+
+def open_db_conn(): 
+    """Establish a connection to the PostgreSQL database."""
+    try: 
+        db = PostgresDB(password=os.getenv("DB_PASSWORD"))
+        conn = db.connect()
+        return conn, db
+    except Exception as e:
+        print(f"[ERROR] Failed to open DB connection: {e}")
+        return None, None
+    
+def create_tables(ddl_path) -> bool:
+    """Create database relations by executing the DDL statements."""
+    # Open a connection to the database
+    conn, _ = open_db_conn()
+
+    if not conn:
+        print("[ERROR] Could not establish a database connection.")
+        return
+
+    success = False
+
+    try: 
+        # Read the .sql file at the path
+        with open(ddl_path, 'r') as ddl_file:
+            # Store the statements in the file
+            ddl_statements = ddl_file.read()
+
+        # Create a cursor object
+        cursor = conn.cursor()
+
+        # Execucute the ddl statements
+        cursor.execute(ddl_statements)
+        
+        conn.commit() # Commit changes
+
+        success = True
+        print("[SUCCESS] Database tables successfully created.")
+    except Exception as e: 
+        print("[ERROR] Failed to execute DDL statements: {e}")
+
+    # Irrespective of the result, terminate connection and clean up
+    finally: 
+        if cursor: 
+            cursor.close()
+        if conn: 
+            conn.close()
+    
+    return success
 
 def read_sheet(file_path, excel_sheet_name=None): 
     """Read a specified sheet in a given excel file."""
@@ -96,6 +152,8 @@ def populate_table(table_name, table_data):
     conn, db = open_db_conn()
 
     if not conn: 
+        print("[ERROR] Could not establish")
+    if not conn: 
         print(f"[SKIPPED] {table_name}: could not connect to DB.")
         return
     
@@ -128,15 +186,5 @@ def insert_row(cursor, table_name, row_data):
     except Exception as e: 
         print(f"[ERROR] Failed to insert into {table_name}: {e}.")
 
-def open_db_conn(): 
-    """Establish a connection to the PostgreSQL database."""
-    try: 
-        db = PostgresDB(password=os.getenv("DB_PASSWORD"))
-        conn = db.connect()
-        return conn, db
-    except Exception as e:
-        print(f"[ERROR] Failed to open DB connection: {e}")
-        return None, None
-
 if __name__ == "__main__":
-    main(True)
+    main(True, True)

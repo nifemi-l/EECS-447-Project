@@ -1,2 +1,7 @@
 .venv
+.env
+/Users/nifemi-lawal/Downloads/Coding/EECS-447-Project/src/scripts/fill_db_script/447 Library Records.xlsx
 .DS_Store
+*.xlsx
+__pycache__/
+*.pyc
