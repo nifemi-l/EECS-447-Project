@@ -7,12 +7,13 @@ Assignment: Database Design Project Part 5: Physical Database Design
 import getpass
 import psycopg2
 import sqlparse
+import cli_commands as cli
 
 # Database connection parameters
 DB_HOST = "libdb-25co-postgres.cajikaswgj3d.us-east-1.rds.amazonaws.com"
 DB_NAME = "postgres"
 DB_USER = "LibDB_25Co"
-DB_PASSWORD = "null"        # Replace this with the master password
+DB_PASSWORD = "hnmbl.EECS447!lib_DB_proj?"        # Replace this with the master password
 
 LIBRARY_PASSWORD = "password"
 
@@ -72,19 +73,14 @@ def verify():
     password_input = getpass.getpass()
     return (password_input == LIBRARY_PASSWORD) # Beautiful security :)
 
-def execute(called_function, params, active_user, admin):
+def execute(active_user, called_function, admin=False, args=None):
     if admin:
         if verify():
-            return called_function(params, active_user)
+            called_function(active_user, args)
         else:
             print("Invalid Admin Password. Please try again!")
     else:
-        return called_function(params, active_user)
-
-def example_command(params, active_user):
-    my_parameter_1 = int(params[0])
-    my_parameter_2 = int(params[1])
-    print(my_parameter_1 + my_parameter_2)
+        called_function(active_user, args)
 
 def main():
     """CLI for interacting with DB"""
@@ -95,30 +91,30 @@ def main():
     quit = False
     active_user = ""
     while not quit:
-        active_user = input("Please input your Library ID: ")
+        active_user = input("Please input your Client ID: ")
         if not active_user.isnumeric():
             active_user = ""
-            print("Please input a valid Library ID\n")
+            print("Please input a valid Client ID\n")
             continue
 
         while active_user != "":
             input_string = input(">> ")
             command = input_string.split(' ')
 
-            # Insert quote connection
-
             match command[0].lower():
                 case "quit":
                     if verify():
-                        quit = True  # end program running
+                        quit = True
                         break
                 case "logout":
                     active_user = ""
-                case "example":
-                    execute(called_function=example_command, params=command[1:], active_user=active_user, admin=False)
-                case "admin_example":
-                    execute(called_function=example_command, params=command[1:], active_user=active_user, admin=True)
+                case "clear":
+                    execute(active_user, cli.clear)
+                case "help":
+                    execute(active_user, cli.library_help)
+                case "":
+                    continue
                 case _:
-                    print("Wow")
+                    print(f"No command found for: {command[0]}")
 
 main()
