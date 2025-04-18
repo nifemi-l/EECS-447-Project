@@ -22,39 +22,38 @@ The tables that will need to be created are:
     Something to consider?
 */
 
+-- Define ENUMs
+CREATE TYPE membership_type_enum AS ENUM ('Regular', 'Student', 'Senior Citizen', 'Other');
+CREATE TYPE account_status_enum AS ENUM ('Active', 'Inactive');
+CREATE TYPE availability_status_enum AS ENUM ('Available', 'Unavailable');
 
 CREATE TABLE Client (
     -- Serial keyword handles both auto-increment and not null together.
-    client_id SERIAL KEY CHECK (client_id > 0),
+    client_id SERIAL PRIMARY KEY CHECK (client_id > 0),
     -- Name is highlighted for me in VSCode as if its a keyword?
-    name VARCHAR(50),
-    membership_type VARCHAR() CHECK (membership_type IN ('Regular', 'Student', 'Senior Citizen', 'Other')),
+    name VARCHAR(50) NOT NULL,
+    membership_type membership_type_enum NOT NULL,
     -- Enum isnt a default keyword. Whats a possible workaround?
-    account_status ENUM NOT NULL,
+    account_status account_status_enum NOT NULL,
     email_address VARCHAR(50) UNIQUE NOT NULL,
     phone_number VARCHAR(15) UNIQUE NOT NULL
-)
+);
 
 CREATE TABLE Media_Item (
-    item_id SERIAL KEY CHECK (item_id > 0),
+    item_id SERIAL PRIMARY KEY CHECK (item_id > 0),
     -- This is definitely wrong as ENUM isnt defined, but it would resemble something like this.
-    availability_status ENUM CHECK (availability_status IN ('Available', 'Unavailable'))
-)
-
+    availability_status availability_status_enum NOT NULL
+);
 
 CREATE TABLE Book (
-    -- Has same constraints as client_id. Serial again handles auto-increment and not null.
-    item_id SERIAL PRIMARY KEY,
-    -- Denotes item_id as a foreign key referencing Media_Item.
-    FOREIGN KEY (item_id) REFERENCES Media_Item(item_id)
+    item_id INT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     author VARCHAR(100) NOT NULL,
-    -- Would "bigint" or a "larger" int make sense? Is "int" large enough?
-    isbn INT NOT NULL UNIQUE CHECK (isbn >= 0),
+    isbn BIGINT NOT NULL UNIQUE CHECK (isbn >= 0),
     genre VARCHAR(50),
-    publication_year INT
-)
-
+    publication_year INT,
+    FOREIGN KEY (item_id) REFERENCES Media_Item(item_id) ON DELETE CASCADE
+);
 
 CREATE TABLE Digital_Media (
 
@@ -62,41 +61,34 @@ CREATE TABLE Digital_Media (
     NOTE: Exact copy of Book. If any changes are made to book, they should also be made here!
     */
 
-    
-     -- Has same constraints as client_id. Serial again handles auto-increment and not null.
-    item_id SERIAL PRIMARY KEY,
-    -- Denotes item_id as a foreign key referencing Media_Item.
-    FOREIGN KEY (item_id) REFERENCES Media_Item(item_id)
+    item_id INT PRIMARY KEY,
+    FOREIGN KEY (item_id) REFERENCES Media_Item(item_id),
     title VARCHAR(100) NOT NULL,
     author VARCHAR(100) NOT NULL,
     -- Would "bigint" or a "larger" int make sense? Is "int" large enough?
-    isbn INT NOT NULL UNIQUE CHECK (isbn >= 0),
+    isbn BIGINT NOT NULL UNIQUE CHECK (isbn >= 0),
     genre VARCHAR(50),
-    publication_year INT   
-
-)
+    publication_year INT
+);
 
 CREATE TABLE Magazine (
-    item_id SERIAL PRIMARY KEY,
-    -- There are a few different ways to do the foreign key syntax, but this explicitly states it as a foreign key and what is referenced.
+    item_id INT PRIMARY KEY,
     FOREIGN KEY (item_id) REFERENCES Media_Item(item_id),
     title VARCHAR(100) NOT NULL,
     -- DATE follows "yyyy-mm-dd" structure.
     publication_date DATE NOT NULL,
     issue_number INT NOT NULL
-)
-
-
+);
 
 CREATE TABLE Transaction (
-    date_borrowed TIMESTAMP NOT NULL CHECK (date_borrowed),
+    transaction_id SERIAL PRIMARY KEY CHECK (transaction_id >= 0),
+    date_borrowed TIMESTAMP NOT NULL,
     -- Not sure if the comparison of timestamps can be made in this manner, but thats the logic it should follow.
     expected_return_date TIMESTAMP NOT NULL CHECK (expected_return_date > date_borrowed),
     -- Ensures the return date of the item is either NULL or is after the date borrowed.
     returned_date TIMESTAMP CHECK (returned_date IS NULL OR returned_date > date_borrowed),
-    transaction_id SERIAL PRIMARY KEY CHECK (transaction_id >= 0),
     client_id INT NOT NULL,
-    FOREIGN KEY (client_id) REFERENCES Client(client_id),
     item_id INT NOT NULL,
+    FOREIGN KEY (client_id) REFERENCES Client(client_id),
     FOREIGN KEY (item_id) REFERENCES Media_Item(item_id)
-)
+);

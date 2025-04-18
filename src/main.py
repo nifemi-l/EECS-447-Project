@@ -6,6 +6,7 @@ Assignment: Database Design Project Part 5: Physical Database Design
 
 import getpass
 import psycopg2
+import sqlparse
 
 # Database connection parameters
 DB_HOST = "libdb-25co-postgres.cajikaswgj3d.us-east-1.rds.amazonaws.com"
@@ -30,25 +31,41 @@ def connect_to_db():
         print(f"DB connection failure: {e}")
         return None
 
-def ensure_configured(db_connection):
-    """Configure the tables and realtions of the DB"""
+def is_correctly_configured(db_connection):
+    """Verify the database schema using the libraryDDL.sql file."""
+    ddl_path = "src/libraryDDL.sql"
+
     try:
-        config_queries = """
-        CREATE TABLE IF NOT EXISTS Clients (
-            ClientID SERIAL PRIMARY KEY CHECK (ClientID >= 0),
-            Name VARCHAR(100) NOT NULL,
-            MembershipType ENUM('Regular', 'Student', 'Senior Citizen', 'Other') NOT NULL,
-            AccountStatus ENUM('Active', 'Suspended', 'Inactive') NOT NULL,
-            EmailAddress VARCHAR(255) UNIQUE NOT NULL,
-            PhoneNumber VARCHAR(15) UNIQUE NOT NULL
-        );
-        """
+        with open(ddl_path, 'r') as ddl_file:
+            ddl_content = ddl_file.read()
+
+        # Remove comments from the SQL file
+        ddl_content = sqlparse.format(ddl_content, strip_comments=True)
+
+        # Parse the SQL statements
+        statements = sqlparse.split(ddl_content)
+
         cursor = db_connection.cursor()
-        cursor.execute(config_queries)
-        db_connection.commit()
+
+        for statement in statements:
+            statement = statement.strip()
+            if statement:
+                try:
+                    cursor.execute(statement)
+                except Exception as e:
+                    print(f"Schema verification failed for statement: {statement}\n{e}")
+                    return False
+
+        print("Database schema matches expectation")
         cursor.close()
+        return True
+
+    except FileNotFoundError:
+        print("DDL file not found")
+        return False
     except Exception as e:
-        print(f"exception encountered: {e}")
+        print(f"Exception encountered: {e}")
+        return False
 
 def verify():
     print("The admin password is required for that action.")
@@ -71,8 +88,9 @@ def example_command(params, active_user):
 
 def main():
     """CLI for interacting with DB"""
-    connection  = connect_to_db()
-    ensure_configured(connection)
+    connection = connect_to_db()
+    if not is_correctly_configured(connection):
+        raise Exception("Database is not correctly configured!")
 
     quit = False
     active_user = ""
@@ -81,6 +99,7 @@ def main():
         if not active_user.isnumeric():
             active_user = ""
             print("Please input a valid Library ID\n")
+            continue
 
         while active_user != "":
             input_string = input(">> ")
@@ -91,7 +110,7 @@ def main():
             match command[0].lower():
                 case "quit":
                     if verify():
-                        quit = True # end program running
+                        quit = True  # end program running
                         break
                 case "logout":
                     active_user = ""
