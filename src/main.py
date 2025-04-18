@@ -114,6 +114,10 @@ def main():
                     execute(connection, active_user, cli.library_help)
                 case "execute":
                     execute(connection, active_user, cli.execute_postgresql, input_string, True)
+                case "generate":
+                    execute(connection, active_user, cli.generate_report, input_string, True)
+                case "query":
+                    execute(connection, active_user, cli.query, input_string, True)
                 case "":
                     continue
                 case _:
