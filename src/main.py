@@ -13,7 +13,7 @@ import cli_commands as cli
 DB_HOST = "libdb-25co-postgres.cajikaswgj3d.us-east-1.rds.amazonaws.com"
 DB_NAME = "postgres"
 DB_USER = "LibDB_25Co"
-DB_PASSWORD = "hnmbl.EECS447!lib_DB_proj?"        # Replace this with the master password
+DB_PASSWORD = open("src/password.txt", 'r').read().strip()
 
 LIBRARY_PASSWORD = "password"
 
