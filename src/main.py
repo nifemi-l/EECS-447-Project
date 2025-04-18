@@ -73,14 +73,14 @@ def verify():
     password_input = getpass.getpass()
     return (password_input == LIBRARY_PASSWORD) # Beautiful security :)
 
-def execute(active_user, called_function, admin=False, args=None):
+def execute(connection, active_user, called_function, input_string=None, admin=False):
     if admin:
         if verify():
-            called_function(active_user, args)
+            called_function(connection, active_user, input_string)
         else:
-            print("Invalid Admin Password. Please try again!")
+            print("Invalid Admin Password")
     else:
-        called_function(active_user, args)
+        called_function(connection, active_user, input_string)
 
 def main():
     """CLI for interacting with DB"""
@@ -109,9 +109,11 @@ def main():
                 case "logout":
                     active_user = ""
                 case "clear":
-                    execute(active_user, cli.clear)
+                    execute(connection, active_user, cli.clear)
                 case "help":
-                    execute(active_user, cli.library_help)
+                    execute(connection, active_user, cli.library_help)
+                case "execute":
+                    execute(connection, active_user, cli.execute_postgresql, input_string, True)
                 case "":
                     continue
                 case _:
