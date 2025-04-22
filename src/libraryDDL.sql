@@ -33,7 +33,7 @@ END $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_status_enum') THEN
-        CREATE TYPE account_status_enum AS ENUM ('Active', 'Inactive');
+        CREATE TYPE account_status_enum AS ENUM ('Active', 'Suspended', 'Inactive');
     END IF;
 END $$;
 
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS Book (
     FOREIGN KEY (item_id) REFERENCES Media_Item(item_id) ON DELETE CASCADE,
     title VARCHAR(100) NOT NULL,
     author VARCHAR(100) NOT NULL,
-    isbn BIGINT NOT NULL UNIQUE CHECK (isbn >= 0),
+    isbn VARCHAR(20) NOT NULL UNIQUE CHECK (isbn <> '0' AND isbn ~ '[1-9]'),
     genre VARCHAR(50),
     publication_year INT
 );
@@ -73,10 +73,11 @@ CREATE TABLE IF NOT EXISTS Digital_Media (
     FOREIGN KEY (item_id) REFERENCES Media_Item(item_id) ON DELETE CASCADE,
     title VARCHAR(100) NOT NULL,
     author VARCHAR(100) NOT NULL,
-    isbn BIGINT NOT NULL UNIQUE CHECK (isbn >= 0),
+    isbn VARCHAR(20) NOT NULL UNIQUE CHECK (isbn <> '0' AND isbn ~ '[1-9]'),
     genre VARCHAR(50),
     publication_year INT
 );
+
 
 CREATE TABLE IF NOT EXISTS Magazine (
     item_id INT PRIMARY KEY,
