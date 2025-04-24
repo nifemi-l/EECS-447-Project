@@ -9,7 +9,7 @@ def library_help(connection, active_user, input_string):
     logout  : clear the active user
     quit    : close the session and exit
     clear   : clear the screen
-    execpg  : execute an arbitrary PostgreSQL command (requires admin privileges)
+    execute  : execute an arbitrary PostgreSQL command (requires admin privileges)
     """
     print(helper_text)
 
