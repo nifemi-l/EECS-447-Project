@@ -259,7 +259,7 @@ def insert_row(cursor, sheet_name, row_data):
 
 def drop_table(cursor, conn): 
     cursor.execute("""
-        DROP TABLE IF EXISTS "Transaction" CASCADE;
+        DROP TABLE IF EXISTS "transaction" CASCADE;
         DROP TABLE IF EXISTS book           CASCADE;
         DROP TABLE IF EXISTS magazine       CASCADE;
         DROP TABLE IF EXISTS digital_media  CASCADE;
