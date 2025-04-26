@@ -43,9 +43,7 @@ def main(test=False, build_tables=False, drop_tables=False):
 
     PATH = os.getenv("EXCEL_PATH")
     
-    SHEET_NAMES = ['Client', 'Transaction', 'MediaItem', 'Book', 'Magazine', 'DigitalMedia']
-
-
+    SHEET_NAMES = ['Client', 'MediaItem', 'Book', 'Magazine', 'DigitalMedia', 'Transaction']
 
     if not PATH: 
         raise ValueError("EXCEL_PATH is not set in the environment.")
@@ -259,7 +257,7 @@ def insert_row(cursor, sheet_name, row_data):
 
 def drop_table(cursor, conn): 
     cursor.execute("""
-        DROP TABLE IF EXISTS "transaction" CASCADE;
+        DROP TABLE IF EXISTS transaction CASCADE;
         DROP TABLE IF EXISTS book           CASCADE;
         DROP TABLE IF EXISTS magazine       CASCADE;
         DROP TABLE IF EXISTS digital_media  CASCADE;
