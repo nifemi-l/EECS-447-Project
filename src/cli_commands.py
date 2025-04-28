@@ -9,7 +9,9 @@ def library_help(connection, active_user, input_string):
     logout  : clear the active user
     quit    : close the session and exit
     clear   : clear the screen
-    execute  : execute an arbitrary PostgreSQL command (requires admin privileges)
+    execute : execute an arbitrary PostgreSQL command (requires admin privileges)
+    query   : executes pre-baked queries. Use "query help" to see options
+    generate_report : generates pre-baked reports. Use "generate help" to see options
     """
     print(helper_text)
 
@@ -25,12 +27,7 @@ def execute_postgresql(connection, active_user, input_string):
     Execute an arbitrary postgres command. Requires admin privileges.
     """
 
-    command = input_string.split(' ')
-    if len(command) <= 1:
-        print("No postgres command provided.")
-        return
-    else:
-        command = ' '.join(command[1:])
+    command = input_string
 
     try:
         cursor = connection.cursor()
@@ -87,12 +84,13 @@ def query(connection, active_user, input_string):
             avg_borro_time_science_fiction  : Average borrowing time for "Science Fiction" books (in days)
             most_pop_author_last_month      : Shows the most borrowed author in the last month
             clients_exceeding_borr_lims     : Lists clients who are currently over their borrowing limits
+            check_client_42                 : Checks the status and information of client 42
+            books_by_stephen_king           : Shows all books by Stephen King
+            owed_fines_per_client           : Shows the fines owed by each client
             """
             print(helper_text)
         case "books_of_2007":
             execute_postgresql(connection, active_user, books_of_2007_query)
-        case "availble_horror_digital_media":
-            execute_postgresql(connection, active_user, available_horror_digital_media_query)
         case "trans_history_11":
             execute_postgresql(connection, active_user, trans_history_11)
         case "avg_borro_time_science_fiction":
@@ -101,6 +99,12 @@ def query(connection, active_user, input_string):
             execute_postgresql(connection, active_user, most_pop_author_last_month)
         case "clients_exceeding_borr_lims":
             execute_postgresql(connection, active_user, clients_exceeding_borr_lims)
+        case "check_client_42":
+            execute_postgresql(connection, active_user, check_client_42)
+        case "owed_fines_per_client":
+            execute_postgresql(connection, active_user, owed_fines_per_client)
+        case "books_by_stephen_king":
+            execute_postgresql(connection, active_user, books_by_stephen_king)
         case _:
             print(f"No query is available for {command[1]}") 
 
@@ -112,25 +116,13 @@ GROUP BY c.client_id, c.name
 ORDER BY total_transactions DESC;
 """
 
-books_of_2007_query = """
-SELECT title, author, publication_year
-FROM Book
-WHERE publication_year = 2007;
-"""
-
-available_horror_digital_media_query = """
-SELECT title, author, genre, availability_status
-FROM Digital_Media
-WHERE genre = 'Horror' AND availability_status = 'Available';
-"""
-
 trans_history_11 = """
 SELECT transaction_id, client_id, date_borrowed, expected_return_date, returned_date
 FROM Transaction
 WHERE item_id = 11;
 """
 
-# N
+# Nifemi
 avg_borro_time_science_fiction = """
 SELECT AVG((t.returned_date::date - t.date_borrowed::date)) AS avg_borrow_days
 FROM transaction AS t
@@ -191,4 +183,41 @@ HAVING COUNT(*) > CASE c.membership_type
                     WHEN 'Senior Citizen' THEN 7
                     ELSE 3
                   END;
+"""
+
+# Holden
+books_by_stephen_king = """
+SELECT *
+FROM Book
+WHERE author = 'Stephen King';
+"""
+
+books_of_2007_query = """
+SELECT *
+FROM Book
+WHERE publication_year = 2007;
+"""
+
+check_client_42 = """
+SELECT *
+FROM Client
+WHERE client_id = 42;
+"""
+
+owed_fines_per_client = """
+SELECT
+  c.client_id,
+  c.name,
+  SUM(
+    GREATEST(
+      (t.returned_date::date - t.expected_return_date::date),
+      0
+    ) * 0.25
+  ) AS total_owed
+FROM transaction AS t
+JOIN client AS c ON t.client_id = c.client_id
+WHERE t.returned_date IS NOT NULL -- Only consider returned items
+  AND t.returned_date > t.expected_return_date
+GROUP BY c.client_id, c.name
+HAVING SUM(GREATEST((t.returned_date::date - t.expected_return_date::date), 0) * 0.25) > 0;
 """
