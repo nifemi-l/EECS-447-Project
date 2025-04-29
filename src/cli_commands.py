@@ -105,6 +105,15 @@ def query(connection, active_user, input_string):
             execute_postgresql(connection, active_user, owed_fines_per_client)
         case "books_by_stephen_king":
             execute_postgresql(connection, active_user, books_by_stephen_king)
+        case "book_mystery_availability":
+            execute_postgresql(connection, active_user, book_mystery_availability)
+        case "frequent_borrower_thriller":
+            execute_postgresql(connection, active_user, frequent_borrower_thriller)
+        case "books_due_soon":
+            execute_postgresql(connection, active_user, books_due_soon)
+        case "members_with_overdue_books":
+            execute_postgresql(connection, active_user, members_with_overdue_books)
+            
         case _:
             print(f"No query is available for {command[1]}") 
 
@@ -220,4 +229,59 @@ WHERE t.returned_date IS NOT NULL -- Only consider returned items
   AND t.returned_date > t.expected_return_date
 GROUP BY c.client_id, c.name
 HAVING SUM(GREATEST((t.returned_date::date - t.expected_return_date::date), 0) * 0.25) > 0;
+"""
+
+#Michael
+
+book_mystery_availability = """
+SELECT
+    b.title,
+    b.item_id
+FROM media_item AS m
+JOIN book AS b ON m.item_id = b.item_id
+WHERE b.genre = 'Mystery' AND m.availability_status = 'Available';
+"""
+
+frequent_borrower_thriller = """
+SELECT
+    c.client_id,
+    c.name,
+    COUNT(*) AS thriller_borrow_count
+FROM transaction AS t
+JOIN media_item AS m ON t.item_id = m.item_id
+JOIN book AS b ON m.item_id = b.item_id
+JOIN client AS c ON t.client_id = c.client_id
+WHERE b.genre = 'Thriller'
+  AND t.date_borrowed >= CURRENT_DATE - INTERVAL '1 year'
+GROUP BY c.client_id, c.name
+ORDER BY thriller_borrow_count DESC
+LIMIT 5;
+"""
+
+books_due_soon = """
+SELECT
+    b.title,
+    b.item_id,
+    c.name,
+    t.expected_return_date
+FROM transaction AS t
+JOIN media_item AS m ON t.item_id = m.item_id
+JOIN book AS b ON m.item_id = b.item_id
+JOIN client AS c ON t.client_id = c.client_id
+WHERE (t.expected_return_date >= CURRENT_DATE) AND (t.expected_return_date <= CURRENT_DATE + INTERVAL '7 days') AND t.returned_date IS NULL
+ORDER BY t.expected_return_date ASC;
+"""
+
+members_with_overdue_books = """
+SELECT
+    c.client_id,
+    c.name,
+    b.title,
+    t.expected_return_date
+FROM transaction AS t
+JOIN media_item AS m ON t.item_id = m.item_id
+JOIN book AS b ON m.item_id = b.item_id
+JOIN client AS c ON t.client_id = c.client_id
+WHERE t.expected_return_date < CURRENT_DATE AND t.returned_date IS NULL
+ORDER BY c.name, t.expected_return_date;
 """
