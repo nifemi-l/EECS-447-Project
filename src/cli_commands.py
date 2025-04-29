@@ -231,7 +231,7 @@ GROUP BY c.client_id, c.name
 HAVING SUM(GREATEST((t.returned_date::date - t.expected_return_date::date), 0) * 0.25) > 0;
 """
 
-#Michael
+# Michael
 
 book_mystery_availability = """
 SELECT
@@ -284,4 +284,63 @@ JOIN book AS b ON m.item_id = b.item_id
 JOIN client AS c ON t.client_id = c.client_id
 WHERE t.expected_return_date < CURRENT_DATE AND t.returned_date IS NULL
 ORDER BY c.name, t.expected_return_date;
+"""
+
+# Logan
+
+frequent_borrowed_items_by_type = """
+SELECT
+    c.membership_type,
+    b.title,
+    COUNT(*) AS borrow_count
+FROM transaction AS t
+JOIN media_item AS m ON t.item_id = m.item_id
+JOIN book AS b ON m.item_id = b.item_id
+JOIN client AS c ON t.client_id = c.client_id
+GROUP BY c.membership_type, b.title
+ORDER BY c.membership_type, borrow_count DESC;"
+"""
+
+never_late_clients = """
+SELECT DISTINCT
+    c.client_id,
+    c.name
+FROM client AS c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM transaction AS t
+    WHERE t.client_id = c.client_id
+      AND t.returned_date > t.expected_return_date
+);
+"""
+
+avg_loan_duration = """
+SELECT
+    AVG(t.returned_date::date - t.date_borrowed::date) AS avg_loan_duration_days
+FROM transaction AS t
+WHERE t.returned_date IS NOT NULL;
+"""
+
+monthly_summary_report = """
+SELECT
+  (SELECT COUNT(*)
+   FROM transaction
+   WHERE date_borrowed >= date_trunc('month', CURRENT_DATE)) AS total_items_loaned,
+
+  (SELECT SUM(
+      GREATEST(
+        (returned_date::date - expected_return_date::date),
+        0
+      ) * 0.25)
+   FROM transaction
+   WHERE returned_date >= date_trunc('month', CURRENT_DATE)) AS total_fees_collected,
+
+  (SELECT b.title
+   FROM transaction AS t
+   JOIN media_item AS m ON t.item_id = m.item_id
+   JOIN book AS b ON m.item_id = b.item_id
+   WHERE t.date_borrowed >= date_trunc('month', CURRENT_DATE)
+   GROUP BY b.title
+   ORDER BY COUNT(*) DESC
+   LIMIT 1) AS most_popular_item;
 """
