@@ -410,7 +410,7 @@ ORDER BY c.client_id, t.date_borrowed DESC;
 """
 
 currently_checked_out = """
-SELECT
+SELECT DISTINCT
     c.client_id,
     c.name,
     t.transaction_id,
