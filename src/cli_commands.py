@@ -11,7 +11,7 @@ def library_help(connection, active_user, input_string):
     clear   : clear the screen
     execute : execute an arbitrary PostgreSQL command (requires admin privileges)
     query   : executes pre-baked queries. Use "query help" to see options
-    generate_report : generates pre-baked reports. Use "generate help" to see options
+    generate_report : generates pre-baked reports. Use "generate_report help" to see options
     """
     print(helper_text)
 
