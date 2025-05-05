@@ -79,7 +79,7 @@ def query(connection, active_user, input_string):
             helper_text = """
             Options:
             books_of_2007                   : Gets all the books published in 2007
-            availble_horror_digital_media   : Gets all digital media items that are available in the horror genre
+            available_horror_digital_media  : Gets all digital media items that are available in the horror genre
             trans_history_11                : Gets all transactions involving item ID 11
             avg_borro_time_science_fiction  : Average borrowing time for "Science Fiction" books (in days)
             most_pop_author_last_month      : Shows the most borrowed author in the last month
@@ -90,7 +90,7 @@ def query(connection, active_user, input_string):
             """
             print(helper_text)
         case "books_of_2007":
-            execute_postgresql(connection, active_user, books_of_2007_query)
+            execute_postgresql(connection, active_user, books_of_2007)
         case "trans_history_11":
             execute_postgresql(connection, active_user, trans_history_11)
         case "avg_borro_time_science_fiction":
@@ -113,9 +113,28 @@ def query(connection, active_user, input_string):
             execute_postgresql(connection, active_user, books_due_soon)
         case "members_with_overdue_books":
             execute_postgresql(connection, active_user, members_with_overdue_books)
-            
+        case "frequent_borrowed_items_by_type":
+            execute_postgresql(connection, active_user, frequent_borrowed_items_by_type)
+        case "never_late_clients":
+            execute_postgresql(connection, active_user, never_late_clients)
+        case "avg_loan_duration":
+            execute_postgresql(connection, active_user, avg_loan_duration)
+        case "monthly_summary_report":
+            execute_postgresql(connection, active_user, monthly_summary_report)           
+        case "borrowing_history_report":
+            execute_postgresql(connection, active_user, borrowing_history_report)
+        case "currently_checked_out":
+            execute_postgresql(connection, active_user, currently_checked_out)
+        case "item_availability_and_history":
+            execute_postgresql(connection, active_user, item_availability_and_history)
+        case "overdue_items_report":
+            execute_postgresql(connection, active_user, overdue_items_report)
+        case "revenue_summary":
+            execute_postgresql(connection, active_user, revenue_summary)
+        case "monthly_fees_report":
+            execute_postgresql(connection, active_user, monthly_fees_report)
         case _:
-            print(f"No query is available for {command[1]}") 
+            print(f"No query is available for {command[1]}")
 
 member_engagement_report = """
 SELECT c.client_id, c.name, COUNT(t.transaction_id) AS total_transactions
@@ -132,6 +151,7 @@ WHERE item_id = 11;
 """
 
 # Nifemi
+
 avg_borro_time_science_fiction = """
 SELECT AVG((t.returned_date::date - t.date_borrowed::date)) AS avg_borrow_days
 FROM transaction AS t
@@ -152,6 +172,7 @@ ORDER BY borrow_count DESC
 LIMIT 1;
 """
 
+# Just fees collected in the last month (excludes not returned/paid)
 monthly_fees_report = """
 -- (assuming $0.25 per day late fee)
 SELECT
@@ -195,13 +216,14 @@ HAVING COUNT(*) > CASE c.membership_type
 """
 
 # Holden
+
 books_by_stephen_king = """
 SELECT *
 FROM Book
 WHERE author = 'Stephen King';
 """
 
-books_of_2007_query = """
+books_of_2007 = """
 SELECT *
 FROM Book
 WHERE publication_year = 2007;
@@ -296,7 +318,7 @@ JOIN media_item AS m ON t.item_id = m.item_id
 JOIN book AS b ON m.item_id = b.item_id
 JOIN client AS c ON t.client_id = c.client_id
 GROUP BY c.membership_type, b.title
-ORDER BY c.membership_type, borrow_count DESC;"
+ORDER BY c.membership_type, borrow_count DESC;
 """
 
 never_late_clients = """
@@ -341,4 +363,129 @@ SELECT
    GROUP BY b.title
    ORDER BY COUNT(*) DESC
    LIMIT 1) AS most_popular_item;
+"""
+
+# Blake
+
+borrowing_history_report = """
+SELECT
+    c.client_id,
+    c.name,
+    t.transaction_id,
+    mi.item_id,
+    b.title AS book_title,
+    dm.title AS digital_media_title,
+    mg.title AS magazine_title,
+    t.date_borrowed,
+    t.expected_return_date,
+    t.returned_date,
+    CASE 
+        WHEN t.returned_date IS NULL AND CURRENT_DATE > t.expected_return_date
+        THEN EXTRACT(DAY FROM (CURRENT_DATE - t.expected_return_date)) * 0.25
+        ELSE 0
+    END AS late_fee
+FROM Client c
+JOIN Transaction t ON c.client_id = t.client_id
+JOIN Media_Item mi ON t.item_id = mi.item_id
+LEFT JOIN Book b ON mi.item_id = b.item_id
+LEFT JOIN Digital_Media dm ON mi.item_id = dm.item_id
+LEFT JOIN Magazine mg ON mi.item_id = mg.item_id
+ORDER BY c.client_id, t.date_borrowed DESC;
+"""
+
+currently_checked_out = """
+SELECT
+    c.client_id,
+    c.name,
+    t.transaction_id,
+    mi.item_id,
+    b.title AS book_title,
+    dm.title AS digital_media_title,
+    mg.title AS magazine_title,
+    t.date_borrowed,
+    t.expected_return_date,
+    t.returned_date,
+    CASE 
+        WHEN t.returned_date IS NULL AND CURRENT_DATE > t.expected_return_date
+        THEN EXTRACT(DAY FROM (CURRENT_DATE - t.expected_return_date)) * 0.25
+        ELSE 0
+    END AS late_fee
+FROM Client c
+JOIN Transaction t ON c.client_id = t.client_id
+JOIN Media_Item mi ON t.item_id = mi.item_id
+LEFT JOIN Book b ON mi.item_id = b.item_id
+LEFT JOIN Digital_Media dm ON mi.item_id = dm.item_id
+LEFT JOIN Magazine mg ON mi.item_id = mg.item_id
+WHERE t.returned_date IS NULL
+ORDER BY c.client_id, t.date_borrowed DESC;
+"""
+
+item_availability_and_history = """
+SELECT
+    c.client_id,
+    c.name,
+    t.transaction_id,
+    mi.item_id,
+    b.title AS book_title,
+    dm.title AS digital_media_title,
+    mg.title AS magazine_title,
+    t.date_borrowed,
+    t.expected_return_date,
+    t.returned_date,
+    CASE 
+        WHEN t.returned_date IS NULL AND CURRENT_DATE > t.expected_return_date
+        THEN EXTRACT(DAY FROM CURRENT_DATE - t.expected_return_date) * 0.25
+        ELSE 0
+    END AS late_fee
+FROM Client c
+JOIN Transaction t ON c.client_id = t.client_id
+JOIN Media_Item mi ON t.item_id = mi.item_id
+LEFT JOIN Book b ON mi.item_id = b.item_id
+LEFT JOIN Digital_Media dm ON mi.item_id = dm.item_id
+LEFT JOIN Magazine mg ON mi.item_id = mg.item_id
+ORDER BY c.client_id, t.date_borrowed DESC;
+"""
+
+overdue_items_report = """
+SELECT
+    c.client_id,
+    c.name,
+    t.transaction_id,
+    mi.item_id,
+    CASE 
+        WHEN b.title IS NOT NULL THEN b.title
+        WHEN dm.title IS NOT NULL THEN dm.title
+        WHEN mg.title IS NOT NULL THEN mg.title
+        ELSE 'Unknown'
+    END AS title,
+    t.date_borrowed,
+    t.expected_return_date,
+    EXTRACT(DAY FROM CURRENT_DATE - t.expected_return_date) * 0.25 AS late_fee
+FROM Transaction t
+JOIN Client c ON t.client_id = c.client_id
+JOIN Media_Item mi ON t.item_id = mi.item_id
+LEFT JOIN Book b ON mi.item_id = b.item_id
+LEFT JOIN Digital_Media dm ON mi.item_id = dm.item_id
+LEFT JOIN Magazine mg ON mi.item_id = mg.item_id
+WHERE t.returned_date IS NULL AND CURRENT_DATE > t.expected_return_date;
+"""
+
+revenue_summary = """
+SELECT
+    c.membership_type,
+    CASE 
+        WHEN b.item_id IS NOT NULL THEN 'Book'
+        WHEN dm.item_id IS NOT NULL THEN 'Digital Media'
+        WHEN mg.item_id IS NOT NULL THEN 'Magazine'
+        ELSE 'Unknown'
+    END AS item_category,
+    SUM(EXTRACT(DAY FROM CURRENT_DATE - t.expected_return_date) * 0.25) AS total_fees
+FROM Transaction t
+JOIN Client c ON t.client_id = c.client_id
+JOIN Media_Item mi ON t.item_id = mi.item_id
+LEFT JOIN Book b ON mi.item_id = b.item_id
+LEFT JOIN Digital_Media dm ON mi.item_id = dm.item_id
+LEFT JOIN Magazine mg ON mi.item_id = mg.item_id
+WHERE t.returned_date IS NULL AND CURRENT_DATE > t.expected_return_date
+GROUP BY c.membership_type, item_category;
 """
