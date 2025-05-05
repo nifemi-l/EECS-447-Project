@@ -56,11 +56,12 @@ def generate_report(connection, active_user, input_string):
     match command[1]:
         case "help":
             helper_text = """
-        Options:
-        member_engagement   : Generates and displays a member engagement report
-        monthly_fees_report : Displays fees collected by membership type in the last month
+            Options:
+            member_engagement   : Generates and displays a member engagement report
+            monthly_fees_report : Displays fees collected by membership type in the last month
 
-        """
+            """
+            print(helper_text)
         case "member_engagement":
             execute_postgresql(connection, active_user, member_engagement_report)
         case "monthly_fees_report":
