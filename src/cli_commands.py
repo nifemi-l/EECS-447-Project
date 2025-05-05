@@ -58,8 +58,6 @@ def generate_report(connection, active_user, input_string):
             helper_text = """
             Options:
             member_engagement   : Generates and displays a member engagement report
-            monthly_fees_report : Displays fees collected by membership type in the last month
-
             """
             print(helper_text)
         case "member_engagement":
