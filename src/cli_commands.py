@@ -107,8 +107,8 @@ def query(connection, active_user, input_string):
             execute_postgresql(connection, active_user, books_by_stephen_king)
         case "book_mystery_availability":
             execute_postgresql(connection, active_user, book_mystery_availability)
-        case "frequent_borrower_thriller":
-            execute_postgresql(connection, active_user, frequent_borrower_thriller)
+        case "frequent_borrower_romance":
+            execute_postgresql(connection, active_user, frequent_borrower_romance)
         case "books_due_soon":
             execute_postgresql(connection, active_user, books_due_soon)
         case "members_with_overdue_books":
@@ -242,20 +242,18 @@ JOIN book AS b ON m.item_id = b.item_id
 WHERE b.genre = 'Mystery' AND m.availability_status = 'Available';
 """
 
-frequent_borrower_thriller = """
+frequent_borrower_romance = """
 SELECT
     c.client_id,
     c.name,
-    COUNT(*) AS thriller_borrow_count
+    COUNT(*) AS romance_borrow_count
 FROM transaction AS t
 JOIN media_item AS m ON t.item_id = m.item_id
 JOIN book AS b ON m.item_id = b.item_id
 JOIN client AS c ON t.client_id = c.client_id
-WHERE b.genre = 'Thriller'
-  AND t.date_borrowed >= CURRENT_DATE - INTERVAL '1 year'
+WHERE b.genre = 'Romance' AND (t.date_borrowed >= CURRENT_DATE - INTERVAL '1 year')
 GROUP BY c.client_id, c.name
-ORDER BY thriller_borrow_count DESC
-LIMIT 5;
+ORDER BY romance_borrow_count DESC;
 """
 
 books_due_soon = """
