@@ -153,7 +153,7 @@ def query(connection, active_user, input_string):
             print(f"No query is available for {command[1]}")
 
 member_engagement_report = """
-SELECT c.client_id, c.name, COUNT(t.transaction_id) AS total_transactions
+SELECT DISTINCT c.client_id, c.name, COUNT(t.transaction_id) AS total_transactions
 FROM Client c
 LEFT JOIN Transaction t ON c.client_id = t.client_id
 GROUP BY c.client_id, c.name
