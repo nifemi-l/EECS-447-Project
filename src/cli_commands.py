@@ -87,7 +87,22 @@ def query(connection, active_user, input_string):
             check_client_42                 : Checks the status and information of client 42
             books_by_stephen_king           : Shows all books by Stephen King
             owed_fines_per_client           : Shows the fines owed by each client
+            book_mystery_availability       : Lists available books in the 'Mystery' genre
+            frequent_borrower_thriller      : Top 5 clients who borrowed the most thrillers this year
+            books_due_soon                  : Books that are due within the next 7 days
+            members_with_overdue_books      : Clients who currently have overdue books
+            frequent_borrowed_items_by_type : Most borrowed book titles per membership type
+            never_late_clients              : Clients who have never returned an item late
+            avg_loan_duration               : Average loan duration (in days)
+            monthly_summary_report          : Summary of this month's loans, fees, and popular item
+            borrowing_history_report        : Full borrowing history with late fee calculations
+            currently_checked_out           : Items currently checked out (unreturned)
+            item_availability_and_history   : Full item history with current status and late fees
+            overdue_items_report            : Report on all currently overdue items and fees
+            revenue_summary                 : Total outstanding fees by membership and item category
+            monthly_fees_report             : Fees collected for returned items within the last month
             """
+            
             print(helper_text)
         case "books_of_2007":
             execute_postgresql(connection, active_user, books_of_2007)
